@@ -1,26 +1,31 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '../common/config/config.module';
-import { ConfigService } from '@nestjs/config';
+import { Global, Module } from '@nestjs/common';
+import {
+  ConfigurableDatabaseModule,
+  CONNECTION_POOL,
+  DATABASE_OPTIONS,
+} from './database.module-definition';
+import DatabaseOptions from './databaseOptions';
+import { Pool } from 'pg';
+import DatabaseService from './database.service';
 
+@Global()
 @Module({
-  imports: [
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        synchronize: false,
-        // synchronize: process.env.NODE_ENV === 'dev',
-        host: configService.get('POSTGRES_HOST'),
-        port: configService.get('POSTGRES_PORT'),
-        username: configService.get('POSTGRES_USER'),
-        password: configService.get('POSTGRES_PASSWORD'),
-        database: configService.get('POSTGRES_DB'),
-        entities: ['dist/src/**/*.entity.js'],
-        autoLoadEntities: true,
-      }),
-    }),
+  exports: [DatabaseService],
+  providers: [
+    DatabaseService,
+    {
+      provide: CONNECTION_POOL,
+      inject: [DATABASE_OPTIONS],
+      useFactory: (databaseOptions: DatabaseOptions) => {
+        return new Pool({
+          host: databaseOptions.host,
+          port: databaseOptions.port,
+          user: databaseOptions.user,
+          password: databaseOptions.password,
+          database: databaseOptions.database,
+        });
+      },
+    },
   ],
 })
-export class DatabaseModule {}
+export default class DatabaseModule extends ConfigurableDatabaseModule {}
