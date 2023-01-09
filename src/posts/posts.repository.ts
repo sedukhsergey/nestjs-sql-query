@@ -37,6 +37,7 @@ class PostsRepository {
     if (databaseResponse.rowCount === 0) {
       throw new NotFoundException();
     }
+    return { success: true };
   }
 
   async create(postData: PostDto) {
