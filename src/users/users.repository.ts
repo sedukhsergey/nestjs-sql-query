@@ -27,6 +27,7 @@ class UsersRepository {
     if (!entity) {
       throw new NotFoundException();
     }
+    return entity
     return new UserModel(entity);
   }
 
