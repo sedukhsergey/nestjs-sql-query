@@ -6,6 +6,7 @@ import { ConfigModule } from './modules/common/config/config.module';
 import { CommonModule } from './modules/common/common.module';
 import { PostsModule } from './posts/post.module';
 import DatabaseModule from './modules/database/database.module';
+import {AuthenticationModule} from "./authentication/authentication.module";
 
 @Module({
   providers: [
@@ -30,6 +31,7 @@ import DatabaseModule from './modules/database/database.module';
     }),
     ConfigModule,
     CommonModule,
+    AuthenticationModule,
     PostsModule,
   ],
 })
