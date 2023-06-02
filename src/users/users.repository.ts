@@ -7,6 +7,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import isRecord from '../utils/isRecord';
 import PostgresErrorCode from '../modules/database/postgresErrorCode.enum';
 import UserAlreadyExistsException from './exceptions/userAlreadyExists.exception';
+import { isDatabaseError } from '../types/databaseError';
 
 @Injectable()
 class UsersRepository {
@@ -27,7 +28,6 @@ class UsersRepository {
     if (!entity) {
       throw new NotFoundException();
     }
-    return entity
     return new UserModel(entity);
   }
 
@@ -94,10 +94,39 @@ class UsersRepository {
     return new UserModel(entity);
   }
 
+  async createUser(userData: CreateUserDto) {
+    try {
+      const databaseResponse = await this.databaseService.runQuery(
+        `
+          INSERT INTO users (
+            email,
+            name,
+            password
+          ) VALUES (
+            $1,
+            $2,
+            $3
+          ) RETURNING *
+        `,
+        [userData.email, userData.name, userData.password],
+      );
+      return new UserModel(databaseResponse.rows[0]);
+    } catch (error) {
+      if (
+        isDatabaseError(error) &&
+        error.code === PostgresErrorCode.UniqueViolation
+      ) {
+        throw new UserAlreadyExistsException(userData.email);
+      }
+      throw error;
+    }
+  }
+
   async create(userData: CreateUserDto) {
     if (userData.address) {
       return this.createUserWithAddress(userData);
     }
+    return this.createUser(userData);
   }
 }
 
